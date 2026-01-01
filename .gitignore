@@ -1,0 +1,32 @@
+# Object files
+*.o
+*.obj
+
+# Libraries
+*.a
+*.so
+*.dll
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.bin
+
+# Logs
+*.log
+
+# Build directories
+build/
+build_c/
+generated/
+dist/
+
+# Generated Source
+*_gen.c
+*_gen.h
+
+# IDEs
+.vscode/
+.idea/
+*.swp
