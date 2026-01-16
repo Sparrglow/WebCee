@@ -11,13 +11,13 @@ typedef struct {
     Token current_token;
     DiagnosticBag* diagnostics;
     MemoryPool* pool;
-    int panic_mode; // 错误恢复模式标志
+    int panic_mode; // Error recovery mode flag
 } Parser;
 
 Parser* parser_create(Lexer* lexer, DiagnosticBag* diagnostics, MemoryPool* pool);
 void parser_destroy(Parser* parser);
 
-// 解析入口
+// Parsing entry point
 WceAstNode* parser_parse(Parser* parser);
 
 #endif // WEBCEE_PARSER_H

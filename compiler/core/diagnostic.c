@@ -34,18 +34,18 @@ void diagnostic_report(DiagnosticBag* bag,
                       const char* fmt, ...) {
     if (!bag) return;
 
-    // 扩容
+    // Resize capacity if needed
     if (bag->count >= bag->capacity) {
         int new_cap = bag->capacity * 2;
         Diagnostic* new_items = (Diagnostic*)realloc(bag->items, sizeof(Diagnostic) * new_cap);
-        if (!new_items) return; // 内存不足，忽略此错误报告
+        if (!new_items) return; // Ignore report on OOM
         bag->items = new_items;
         bag->capacity = new_cap;
     }
 
     Diagnostic* d = &bag->items[bag->count++];
     
-    // 复制文件名
+    // Copy file name
     if (file_name) {
         #ifdef _WIN32
         d->file_name = _strdup(file_name);
@@ -61,7 +61,7 @@ void diagnostic_report(DiagnosticBag* bag,
     d->level = level;
     d->error_code = error_code;
 
-    // 格式化消息
+    // Format message
     va_list args;
     va_start(args, fmt);
     vsnprintf(d->message, sizeof(d->message), fmt, args);
@@ -79,8 +79,8 @@ void diagnostic_print_all(const DiagnosticBag* bag) {
         Diagnostic* d = &bag->items[i];
         const char* level_str = "INFO";
 
-        // 简单的 ANSI 颜色（如果在支持的终端）
-        // Windows CMD 可能默认不支持，这里暂时仅用文本区分
+        // Simple ANSI colors (if supported by terminal)
+        // Windows CMD might not support by default, use plain text here
         switch (d->level) {
             case DIAG_ERROR:   level_str = "ERROR"; break;
             case DIAG_WARNING: level_str = "WARN"; break;

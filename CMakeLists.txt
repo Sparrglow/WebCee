@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 project(WebCee C)
 
+# Set UTF-8 encoding for MSVC to handle Unicode characters in source files
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # --- 1. Build the Compiler Tool ---
+# Note: This is the IR-enabled version with AST -> IR -> C compilation pipeline
 file(GLOB COMPILER_SOURCES "compiler/core/*.c" "compiler/main.c")
 add_executable(wce_tool ${COMPILER_SOURCES})
 target_include_directories(wce_tool PRIVATE compiler/core)

@@ -19,13 +19,13 @@ typedef struct WceAstNode WceAstNode;
 
 struct WceAstNode {
     AstNodeType type;
-    Token token; // 关联的Token，用于位置信息
+    Token token; // Associated Token, used for location information
     
-    // 简单的多叉树结构
+    // Simple multi-way tree structure
     WceAstNode* first_child;
     WceAstNode* next_sibling;
     
-    // 特定节点数据 (可以使用 union 优化，这里先简化)
+    // Specific node data (can be optimized with union, simplified here)
     char* string_value;
     double number_value;
     
@@ -38,7 +38,7 @@ struct WceAstNode {
     // FOR: child[0]=init, child[1]=cond, child[2]=inc, child[3]=body
 };
 
-// 创建节点
+// Create node
 WceAstNode* ast_node_create(MemoryPool* pool, AstNodeType type, Token token);
 void ast_node_add_child(WceAstNode* parent, WceAstNode* child);
 // void ast_node_destroy(WceAstNode* node); // Managed by MemoryPool

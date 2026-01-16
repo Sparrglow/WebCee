@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-:: 1. 获取路径信息
+:: 1. Get path information
 set "SRC_ROOT=%~dp0"
 set "TARGET_DIR=%~f1"
 
@@ -12,7 +12,7 @@ if "%~1"=="" (
 
 echo [WebCee] Target Project Path: "%TARGET_DIR%"
 
-:: 2. 检查并自动构建编译器
+:: 2. Check and auto-build compiler
 set "COMPILER_EXE=%SRC_ROOT%tools\wce.exe"
 
 if not exist "%COMPILER_EXE%" (
@@ -26,18 +26,18 @@ if not exist "%COMPILER_EXE%" (
     echo [WebCee] Compiler built successfully.
 )
 
-:: 3. 创建目录结构
+:: 3. Create directory structure
 if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
 if not exist "%TARGET_DIR%\tools" mkdir "%TARGET_DIR%\tools"
 if not exist "%TARGET_DIR%\lib" mkdir "%TARGET_DIR%\lib"
 
-:: 4. 复制文件
+:: 4. Copy files
 echo [WebCee] Copying files...
 copy /Y "%COMPILER_EXE%" "%TARGET_DIR%\tools\" >nul
 copy /Y "%SRC_ROOT%src\webcee.c" "%TARGET_DIR%\lib\" >nul
 copy /Y "%SRC_ROOT%include\*.h" "%TARGET_DIR%\lib\" >nul
 
-:: 5. 生成 ui.wce
+:: 5. Generate ui.wce
 (
 echo wce_container^(^) {
 echo     wce_card^(^) {
@@ -62,7 +62,7 @@ echo     }
 echo }
 ) > "%TARGET_DIR%\ui.wce"
 
-:: 6. 生成 main.c (使用宏定义端口，增加灵活性)
+:: 6. Generate main.c (Using macros for port definition for flexibility)
 (
 echo #include "lib/webcee.h"
 echo #include ^<stdio.h^>
@@ -94,7 +94,7 @@ echo     return 0;
 echo }
 ) > "%TARGET_DIR%\main.c"
 
-:: 7. 生成 build.bat (移除硬编码的端口提示，只负责构建)
+:: 7. Generate build.bat (Remove hardcoded port markers, focus on building)
 (
 echo @echo off
 echo setlocal

@@ -23,6 +23,8 @@ static int counter = 0;
 static int cpu_load = 0;
 static int mem_load = 0;
 static int active_connections = 0;
+static int fan_speed = 50;
+static int health = 95;
 static char last_log[256] = "System Ready.";
 
 // --- Logic ---
@@ -31,10 +33,10 @@ void update_dashboard() {
     char buf[32];
     
     // Update Counter
-    sprintf(buf, "%d", counter);
+    snprintf(buf, sizeof(buf), "%d", counter);
     wce_data_set("counter_val", buf);
     
-    sprintf(buf, "%d", active_connections);
+    snprintf(buf, sizeof(buf), "%d", active_connections);
     wce_data_set("active_conn", buf);
     
     // CPU load is proportional to active connections + random noise
@@ -45,6 +47,18 @@ void update_dashboard() {
     if (cpu_load < target_cpu) cpu_load++;
     else if (cpu_load > target_cpu) cpu_load--;
     
+    // Dynamic health simulation
+    if (fan_speed < 30) {
+        health -= 2; // Overheating
+    } else if (fan_speed > 80) {
+        if (health < 100) health++; // Cooling down
+    }
+    if (health < 0) health = 0;
+    if (health > 100) health = 100;
+
+    snprintf(buf, sizeof(buf), "%d", health);
+    wce_data_set("health_progress", buf);
+
     // Real Memory Usage
     #ifdef _WIN32
     PROCESS_MEMORY_COUNTERS pmc;
@@ -68,30 +82,36 @@ void update_dashboard() {
     }
     #endif
     
-    sprintf(buf, "%d%%", cpu_load);
+    snprintf(buf, sizeof(buf), "%d%%", cpu_load);
     wce_data_set("cpu_val", buf);
     
-    sprintf(buf, "%d MB", mem_load);
+    snprintf(buf, sizeof(buf), "%d MB", mem_load);
     wce_data_set("mem_val", buf);
 }
 
 // Hook for input changes
-void wce_handle_model_update(const char* key, const char* val) {
-    if (strcmp(key, "user_input") == 0) {
+void my_model_update_handler(const char* key, const char* val) {
+    if (strcmp(key, "fan_speed") == 0) {
+        fan_speed = atoi(val);
+        snprintf(last_log, sizeof(last_log), "> Fan Speed updated to %d%%", fan_speed);
+        wce_data_set("server_log", last_log);
+    } else if (strcmp(key, "user_input") == 0) {
         // Demonstrate C string processing
-        int len = strlen(val);
+        size_t len = strlen(val);
         char response[512];
         
         // Reverse string logic
         char reversed[256];
-        strncpy(reversed, val, 255);
-        reversed[255] = '\0';
-        for(int i=0, j=strlen(reversed)-1; i<j; i++, j--) {
+        size_t val_len = strlen(val);
+        if (val_len > 255) val_len = 255;
+        memcpy(reversed, val, val_len);
+        reversed[val_len] = '\0';
+        for(size_t i=0, j=val_len-1; i<j; i++, j--) {
             char t = reversed[i]; reversed[i] = reversed[j]; reversed[j] = t;
         }
         
         snprintf(response, sizeof(response), 
-            "Length=%d, Reversed='%s' (Processed in C)", 
+            "Length=%zu, Reversed='%s' (Processed in C)", 
             len, reversed);
             
         wce_data_set("server_response", response);
@@ -117,7 +137,7 @@ void on_inc() {
 void on_reset() {
     active_connections = 0;
     counter = 0;
-    strcpy(last_log, "> System Reset.");
+    strcpy_s(last_log, sizeof(last_log), "> System Reset.");
     wce_data_set("server_log", last_log);
     wce_data_set("user_input", "");
     wce_data_set("server_response", "Waiting for input...");
@@ -135,8 +155,9 @@ int main() {
     }
     
     // Register callbacks
-    wce_register_function("on_inc", on_inc);
-    wce_register_function("on_reset", on_reset);
+    wce_register_function("on_inc", (wce_func_t)on_inc);
+    wce_register_function("on_reset", (wce_func_t)on_reset);
+    wce_set_model_update_handler(my_model_update_handler);
     
     // Initial data
     cpu_load = 0;

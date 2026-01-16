@@ -1,6 +1,6 @@
 @echo off
 echo Rebuilding project to ensure latest changes...
-call tools\build_project.bat
+call build.bat
 if errorlevel 1 (
     echo Build failed.
     pause
@@ -10,4 +10,4 @@ if errorlevel 1 (
 echo.
 echo Starting WebCee Showcase...
 echo.
-"examples\showcase\showcase.exe"
+"build\Release\showcase.exe"

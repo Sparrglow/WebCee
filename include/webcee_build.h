@@ -103,6 +103,24 @@ static inline void wce_input_begin(const char* placeholder) {
 }
 #define wce_input_end() _wce_pop_context()
 
+static inline void wce_slider_begin(const char* label) {
+    WceNode* node = _wce_node_create(WCE_NODE_SLIDER);
+    node->label = (char*)label;
+    WceNode* parent = _wce_current_context();
+    if (parent) _wce_add_child(parent, node);
+    _wce_push_context(node);
+}
+#define wce_slider_end() _wce_pop_context()
+
+static inline void wce_progress_begin(const char* label) {
+    WceNode* node = _wce_node_create(WCE_NODE_PROGRESS);
+    node->label = (char*)label;
+    WceNode* parent = _wce_current_context();
+    if (parent) _wce_add_child(parent, node);
+    _wce_push_context(node);
+}
+#define wce_progress_end() _wce_pop_context()
+
 // --- Leaf Node Functions (No Block) ---
 
 static inline void wce_text(const char* text) {
@@ -122,6 +140,20 @@ static inline void wce_button(const char* label) {
 static inline void wce_input(const char* placeholder) {
     WceNode* node = _wce_node_create(WCE_NODE_INPUT);
     node->label = (char*)placeholder;
+    WceNode* parent = _wce_current_context();
+    if (parent) _wce_add_child(parent, node);
+}
+
+static inline void wce_slider(const char* label) {
+    WceNode* node = _wce_node_create(WCE_NODE_SLIDER);
+    node->label = (char*)label;
+    WceNode* parent = _wce_current_context();
+    if (parent) _wce_add_child(parent, node);
+}
+
+static inline void wce_progress(const char* label) {
+    WceNode* node = _wce_node_create(WCE_NODE_PROGRESS);
+    node->label = (char*)label;
     WceNode* parent = _wce_current_context();
     if (parent) _wce_add_child(parent, node);
 }

@@ -5,20 +5,20 @@
 #include "diagnostic.h"
 
 typedef struct {
-    const char* source;      // 源代码字符串
-    const char* file_name;   // 文件名
-    int position;            // 当前位置（字符索引）
-    int length;              // 源码总长度
-    int line;                // 当前行
-    int column;              // 当前列
-    DiagnosticBag* diagnostics; // 关联的诊断包
+    const char* source;      // Source code string
+    const char* file_name;   // File name
+    int position;            // Current position (character index)
+    int length;              // Total length of source code
+    int line;                // Current line
+    int column;              // Current column
+    DiagnosticBag* diagnostics; // Associated diagnostic bag
 } Lexer;
 
-// 创建Lexer
+// Create Lexer
 Lexer* lexer_create(const char* source, const char* file_name, DiagnosticBag* diagnostics);
 void lexer_destroy(Lexer* lexer);
 
-// 获取下一个Token
+// Get next token
 Token lexer_next_token(Lexer* lexer);
 
 #endif // WEBCEE_LEXER_H

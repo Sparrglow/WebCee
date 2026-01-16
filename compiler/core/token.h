@@ -5,12 +5,12 @@ typedef enum {
     TOKEN_EOF,
     TOKEN_UNKNOWN,
     
-    // 字面量
+    // Literals
     TOKEN_IDENTIFIER,   // wce_button, my_var
     TOKEN_STRING,       // "hello"
     TOKEN_NUMBER,       // 123, 3.14
     
-    // 符号
+    // Symbols
     TOKEN_LPAREN,       // (
     TOKEN_RPAREN,       // )
     TOKEN_LBRACE,       // {
@@ -18,7 +18,7 @@ typedef enum {
     TOKEN_COMMA,        // ,
     TOKEN_SEMICOLON,    // ;
     
-    // 运算符
+    // Operators
     TOKEN_PLUS,         // +
     TOKEN_MINUS,        // -
     TOKEN_STAR,         // *
@@ -31,7 +31,7 @@ typedef enum {
     TOKEN_LE,           // <=
     TOKEN_GE,           // >=
     
-    // 关键字 (后续扩展)
+    // Keywords
     TOKEN_KW_IF,        // wce_if
     TOKEN_KW_ELSE,      // wce_else
     TOKEN_KW_FOR        // wce_for
@@ -39,8 +39,8 @@ typedef enum {
 
 typedef struct {
     TokenType type;
-    const char* text;   // 指向源码中的起始位置（不拥有内存）
-    int length;         // 长度
+    const char* text;   // Pointing to start in source (not owned)
+    int length;         // Length
     int line;
     int column;
 } Token;

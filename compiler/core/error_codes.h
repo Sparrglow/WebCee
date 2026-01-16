@@ -6,17 +6,26 @@
 #define ERR_LEX_UNTERMINATED_STR   2
 
 // Parser Errors (100-199)
-#define ERR_PARSER_EXPECTED_RBRACE 101 // 缺少右大括号 `}`
-#define ERR_PARSER_EXPECTED_RPAREN 102 // 缺少右括号 `)`
-#define ERR_PARSER_EXPECTED_LPAREN 103 // 缺少左括号 `(`
-#define ERR_PARSER_EXPECTED_ID     104 // 期望标识符
-#define ERR_PARSER_EXPECTED_SEMI   105 // 期望分号
-#define ERR_PARSER_UNEXPECTED_TOK  106 // 意外的 Token
-#define ERR_PARSER_EXPECTED_LBRACE 107 // 缺少左大括号 `{`
+#define ERR_PARSER_EXPECTED_RBRACE 101 // Missing right brace `}`
+#define ERR_PARSER_EXPECTED_RPAREN 102 // Missing right parenthesis `)`
+#define ERR_PARSER_EXPECTED_LPAREN 103 // Missing left parenthesis `(`
+#define ERR_PARSER_EXPECTED_ID     104 // Expected identifier
+#define ERR_PARSER_EXPECTED_SEMI   105 // Expected semicolon
+#define ERR_PARSER_UNEXPECTED_TOK  106 // Unexpected token
+#define ERR_PARSER_EXPECTED_LBRACE 107 // Missing left brace `{`
 
 // Semantic Errors (200-299)
-#define ERR_SEMANTIC_UNDEFINED     201 // 未定义的组件或函数
-#define ERR_SEMANTIC_ARG_COUNT     202 // 参数数量不匹配
-#define ERR_SEMANTIC_TYPE_MISMATCH 203 // 参数类型不匹配
+#define ERR_SEMANTIC_UNDEFINED     201 // Undefined component or function
+#define ERR_SEMANTIC_ARG_COUNT     202 // Argument count mismatch
+#define ERR_SEMANTIC_TYPE_MISMATCH 203 // Argument type mismatch
+
+// IR Errors (300-399)
+#define ERR_IR_PROPERTY_CONTEXT    301 // Property context error
+#define ERR_IR_UNKNOWN_COMPONENT   302 // Unknown component type
+
+// Code Generation Warnings (400-499)
+#define WARN_CODEGEN_UNUSED_BIND   401 // Unused binding
+#define WARN_CODEGEN_DEEP_NESTING  402 // Deep nesting warning
+#define WARN_CODEGEN_EMPTY_STYLE   403 // Empty style warning
 
 #endif // WEBCEE_ERROR_CODES_H

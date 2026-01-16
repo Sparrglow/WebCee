@@ -1,10 +1,10 @@
 #ifndef WEBCEE_CODEGEN_H
 #define WEBCEE_CODEGEN_H
 
-#include "ast.h"
+#include "ir.h"
 #include <stdio.h>
 
-// Generate C code from AST
-void codegen_generate(WceAstNode* root, FILE* out);
+// Generate C code from IR
+void codegen_generate(WceIrNode* root, FILE* out);
 
 #endif // WEBCEE_CODEGEN_H

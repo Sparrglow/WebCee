@@ -4,33 +4,33 @@
 #include <stdarg.h>
 
 typedef enum {
-    DIAG_ERROR,   // 错误，编译中止
-    DIAG_WARNING, // 警告，编译继续
-    DIAG_INFO,    // 信息
-    DIAG_DEBUG    // 调试信息（仅调试模式）
+    DIAG_ERROR,   // Error, compilation aborted
+    DIAG_WARNING, // Warning, compilation continues
+    DIAG_INFO,    // Information
+    DIAG_DEBUG    // Debug information (debug mode only)
 } DiagnosticLevel;
 
 typedef struct {
-    char* file_name;         // 源文件名 (使用动态分配或指向静态字符串)
-    int line;                // 行号（从1开始）
-    int column;              // 列号（从1开始）
+    char* file_name;         // Source file name
+    int line;                // 1-based line number (starts from 1)
+    int column;              // 1-based column number (starts from 1)
     DiagnosticLevel level;
-    int error_code;          // 唯一错误码
-    char message[256];       // 人类可读的错误信息
+    int error_code;          // Unique error code
+    char message[256];       // Human-readable message
 } Diagnostic;
 
 typedef struct {
-    Diagnostic* items;       // 诊断信息数组
-    int capacity;            // 数组容量
-    int count;               // 当前数量
-    int error_count;         // 错误数
+    Diagnostic* items;       // Diagnostic items array
+    int capacity;            // Array capacity
+    int count;               // Current count
+    int error_count;         // Error count
 } DiagnosticBag;
 
-// 创建和销毁诊断包
+// Create and destroy diagnostic bag
 DiagnosticBag* diagnostic_bag_create(void);
 void diagnostic_bag_destroy(DiagnosticBag* bag);
 
-// 报告诊断信息
+// Report diagnostic information
 void diagnostic_report(DiagnosticBag* bag,
                       const char* file_name,
                       int line, int column,
@@ -38,10 +38,10 @@ void diagnostic_report(DiagnosticBag* bag,
                       int error_code,
                       const char* fmt, ...);
 
-// 打印所有诊断信息到标准错误输出
+// Print all diagnostic information to stderr
 void diagnostic_print_all(const DiagnosticBag* bag);
 
-// 检查是否存在错误
+// Check if any errors exist
 int diagnostic_has_errors(const DiagnosticBag* bag);
 
 #endif // WEBCEE_DIAGNOSTIC_H

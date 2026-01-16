@@ -6,8 +6,8 @@ set -e
 echo "Rebuilding project for Linux..."
 
 # Use the centralized build script
-./tools/build_project.sh
+./build.sh
 
 echo ""
 echo "Starting WebCee Showcase..."
-./examples/showcase/showcase
+./build/showcase

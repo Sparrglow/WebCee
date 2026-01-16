@@ -44,6 +44,37 @@ wce_container() {
                 }
             }
         }
+        wce_col() {
+            wce_card() {
+                wce_css("background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center;");
+                wce_text("Total Requests") { wce_css("color: #7f8c8d; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px;"); }
+                wce_text("0") {
+                    wce_bind("counter_val");
+                    wce_css("font-size: 36px; font-weight: 700; color: #f39c12; display: block;");
+                }
+            }
+        }
+    }
+
+    wce_card() {
+        wce_text("Live System Simulation") {
+            wce_css("font-size: 20px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; display: block;");
+        }
+        wce_row() {
+            wce_col() {
+                wce_text("Fan Speed (RPM Control)") { wce_css("display: block; margin-bottom: 10px; color: #666; font-size: 14px;"); }
+                wce_slider("Fan Speed") {
+                    wce_bind("fan_speed");
+                    wce_css("width: 100%;");
+                }
+            }
+            wce_col() {
+                wce_text("Component Reliability") { wce_css("display: block; margin-bottom: 10px; color: #666; font-size: 14px;"); }
+                wce_progress("Health Bar") {
+                    wce_bind("health_progress");
+                }
+            }
+        }
     }
 
     wce_row() {

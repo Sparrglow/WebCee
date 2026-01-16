@@ -23,39 +23,35 @@ extern "C" {
 
 #define WEBCEE_API
 
-/* 初始化与启动 */
-WEBCEE_API int wce_init(int port);                    // 初始化WebCee服务
-WEBCEE_API int wce_start(void);                       // 启动服务（非阻塞）
-WEBCEE_API void wce_stop(void);                       // 停止服务
+/* Initialization and Startup */
+WEBCEE_API int wce_init(int port);                    // Initialize WebCee service
+WEBCEE_API int wce_start(void);                       // Start service (non-blocking)
+WEBCEE_API void wce_stop(void);                       // Stop service
 
-/* 数据同步 (C -> 前端) */
-WEBCEE_API void wce_data_set(const char* key, const char* val);     // 更新单个数据
-WEBCEE_API const char* wce_data_get(const char* key);               // 获取数据 (前端 -> C)
+/* Data Synchronization (C -> Frontend) */
+WEBCEE_API void wce_data_set(const char* key, const char* val);     // Update single data
+WEBCEE_API const char* wce_data_get(const char* key);               // Get data (Frontend -> C)
 
-/* 函数注册 (C -> 前端) */
+/* Function Registration (C -> Frontend) */
 typedef void (*wce_func_t)(void);
 WEBCEE_API void wce_register_function(const char* name, wce_func_t func);
 
-/* 工具函数 */
-WEBCEE_API const char* wce_version(void);             // 获取框架版本
-WEBCEE_API int wce_is_connected(void);                // 检查前端连接状态
-WEBCEE_API void wce_sleep(int ms);                    // 跨平台休眠函数 (毫秒)
+/* Model Update Callback */
+typedef void (*wce_model_update_handler_t)(const char* key, const char* val);
+WEBCEE_API void wce_set_model_update_handler(wce_model_update_handler_t handler);
+
+/* Utility Functions */
+WEBCEE_API const char* wce_version(void);             // Get framework version
+WEBCEE_API int wce_is_connected(void);                // Check frontend connection status
+WEBCEE_API void wce_sleep(int ms);                    // Cross-platform sleep function (milliseconds)
 
 /*
- * 可选：当通过 CMake 的 target_add_webcee_ui() 绑定了 .wce 文件时，
- * 会自动定义 WEBCEE_HAS_GENERATED=1，并把生成目录加入 include path。
- * 这样用户只需 include 本头文件即可获得 WCE_EVT_* 等生成接口声明。
+ * Optional: When a .wce file is bound via CMake's target_add_webcee_ui(),
+ * WEBCEE_HAS_GENERATED=1 is automatically defined, and the generated directory is added to include path.
+ * This allows users to include this header file to get generated interface declarations like WCE_EVT_*.
+ *
+ * Note: New version uses IR pipeline, no longer generates webcee_generated.h header file
  */
-#if defined(WEBCEE_HAS_GENERATED)
-#include "webcee_generated.h"
-#else
-/* Fallback: when compiler supports __has_include, include if present */
-#if defined(__has_include)
-#if __has_include("webcee_generated.h")
-#include "webcee_generated.h"
-#endif
-#endif
-#endif
 
 #include "webcee_build.h"
 

@@ -16,10 +16,6 @@
 
 #include "webcee.h"
 
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -122,9 +118,9 @@ void wce_register_function(const char* name, wce_func_t func) {
 
 #if !defined(WEBCEE_GENERATED_H)
 	/*
-	 * 生成代码不存在时：
-	 * - header-only 模式：提供 static stub，保证“只 include 就能跑”。
-	 * - library 模式：只提供声明，避免与 webcee_generated.c 的真实实现冲突。
+	 * When generated code is missing:
+	 * - header-only mode: provide static stubs to ensure "just include and run".
+	 * - library mode: only provide declarations to avoid conflict with implementations in webcee_generated.c.
 	 */
     // In library mode (this file), we provide weak or default implementations if not linked.
     // But since this is a C file, we can just provide them as weak symbols or just normal functions
@@ -145,10 +141,20 @@ void wce_register_function(const char* name, wce_func_t func) {
     #endif
 	char* wce_get_list_json(const char* name) { (void)name; return (char*)"[]"; }
     
-    #if defined(__GNUC__) || defined(__clang__)
-    __attribute__((weak))
-    #endif
-	void wce_handle_model_update(const char* key, const char* val) { (void)key; (void)val; }
+    // Default model update handler
+    static void wce_default_handle_model_update(const char* key, const char* val) { (void)key; (void)val; }
+    
+    // Function pointer for user-defined handler
+    static void (*wce_model_update_handler)(const char*, const char*) = wce_default_handle_model_update;
+    
+    // Function to set custom model update handler
+    void wce_set_model_update_handler(void (*handler)(const char*, const char*)) {
+        if (handler) {
+            wce_model_update_handler = handler;
+        } else {
+            wce_model_update_handler = wce_default_handle_model_update;
+        }
+    }
     
     #if defined(__GNUC__) || defined(__clang__)
     __attribute__((weak))
@@ -205,13 +211,16 @@ static const char* WCE_HTML_HEADER =
 	"<title>WebCee App</title>"
 	"<style>"
 	"body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;padding:20px;background:#f0f2f5;}"
-	".container{max_width:800px;margin:0 auto;}"
+	".container{max-width:800px;margin:0 auto;}"
 	".row{display:flex;flex-wrap:wrap;margin:-10px;}"
 	".col{flex:1;padding:10px;min-width:200px;}"
 	".card{background:white;border-radius:8px;padding:20px;box-shadow:0 2px 4px rgba(0,0,0,0.1);margin-bottom:20px;}"
 	"button{background:#007bff;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:14px;}"
 	"button:hover{background:#0056b3;}"
 	"input{padding:8px;border:1px solid #ddd;border-radius:4px;width:100%;box-sizing:border-box;}"
+    "progress{width:100%;height:12px;border-radius:6px;overflow:hidden;appearance:none;-webkit-appearance:none;}"
+    "progress::-webkit-progress-bar{background:#eee;}"
+    "progress::-webkit-progress-value{background:#28a745;}"
 	"</style></head><body><div id='app'>";
 
 static const char* WCE_HTML_FOOTER =
@@ -219,7 +228,7 @@ static const char* WCE_HTML_FOOTER =
 	"<script>"
 	"async function trigger(evt){"
     "  await fetch('/api/trigger?event='+encodeURIComponent(evt),{method:'POST'});"
-    "  sync();" // Immediate sync after trigger
+    "  sync();"
     "}"
 	"async function sync(){"
 	"  try{const r=await fetch('/api/data');const d=await r.json();"
@@ -228,12 +237,14 @@ static const char* WCE_HTML_FOOTER =
 	"    if(d[k]!==undefined) {"
     "      if(el.tagName==='INPUT') {"
     "        if(document.activeElement!==el) el.value=d[k];"
+    "      } else if(el.tagName==='PROGRESS') {"
+    "        el.value=d[k];"
     "      } else el.textContent=d[k];"
     "    }"
 	"  });"
 	"  }catch(e){}"
 	"}"
-	"setInterval(sync, 100); sync();" // Faster polling (100ms)
+	"setInterval(sync, 100); sync();"
 	"</script></body></html>";
 
 // --- Helper Functions ---
@@ -243,33 +254,33 @@ static void str_append(char** buf, size_t* cap, size_t* len, const char* str) {
         *cap = (*cap + l) * 2 + 4096;
         *buf = (char*)realloc(*buf, *cap);
     }
-    strcpy(*buf + *len, str);
+    memcpy(*buf + *len, str, l + 1); // Include null terminator
     *len += l;
+}
+
+// Helper to inject style
+static void inject_style(WceNode* node, char** buf, size_t* cap, size_t* len) {
+    if (node->style) {
+        str_append(buf, cap, len, " style='");
+        str_append(buf, cap, len, node->style);
+        str_append(buf, cap, len, "'");
+    }
 }
 
 static void wce_render_node_recursive(WceNode* node, char** buf, size_t* cap, size_t* len) {
     if (!node) return;
 
-    // Helper to inject style
-    void inject_style() {
-        if (node->style) {
-            str_append(buf, cap, len, " style='");
-            str_append(buf, cap, len, node->style);
-            str_append(buf, cap, len, "'");
-        }
-    }
-
     // Open tag
     switch (node->type) {
         case WCE_NODE_ROOT: break;
-        case WCE_NODE_CONTAINER: str_append(buf, cap, len, "<div class='container'"); inject_style(); str_append(buf, cap, len, ">"); break;
-        case WCE_NODE_ROW:       str_append(buf, cap, len, "<div class='row'"); inject_style(); str_append(buf, cap, len, ">"); break;
-        case WCE_NODE_COL:       str_append(buf, cap, len, "<div class='col'"); inject_style(); str_append(buf, cap, len, ">"); break;
-        case WCE_NODE_CARD:      str_append(buf, cap, len, "<div class='card'"); inject_style(); str_append(buf, cap, len, ">"); break;
-        case WCE_NODE_PANEL:     str_append(buf, cap, len, "<div class='panel'"); inject_style(); str_append(buf, cap, len, ">"); break;
+        case WCE_NODE_CONTAINER: str_append(buf, cap, len, "<div class='container'"); inject_style(node, buf, cap, len); str_append(buf, cap, len, ">"); break;
+        case WCE_NODE_ROW:       str_append(buf, cap, len, "<div class='row'"); inject_style(node, buf, cap, len); str_append(buf, cap, len, ">"); break;
+        case WCE_NODE_COL:       str_append(buf, cap, len, "<div class='col'"); inject_style(node, buf, cap, len); str_append(buf, cap, len, ">"); break;
+        case WCE_NODE_CARD:      str_append(buf, cap, len, "<div class='card'"); inject_style(node, buf, cap, len); str_append(buf, cap, len, ">"); break;
+        case WCE_NODE_PANEL:     str_append(buf, cap, len, "<div class='panel'"); inject_style(node, buf, cap, len); str_append(buf, cap, len, ">"); break;
         case WCE_NODE_TEXT:
             str_append(buf, cap, len, "<span");
-            inject_style();
+            inject_style(node, buf, cap, len);
             if (node->value_ref) {
                  str_append(buf, cap, len, " wce-bind='");
                  str_append(buf, cap, len, node->value_ref);
@@ -281,7 +292,7 @@ static void wce_render_node_recursive(WceNode* node, char** buf, size_t* cap, si
             break;
         case WCE_NODE_BUTTON:
             str_append(buf, cap, len, "<button");
-            inject_style();
+            inject_style(node, buf, cap, len);
             if (node->event_handler) {
                 str_append(buf, cap, len, " onclick=\"trigger('");
                 str_append(buf, cap, len, node->event_handler);
@@ -293,7 +304,7 @@ static void wce_render_node_recursive(WceNode* node, char** buf, size_t* cap, si
             break;
         case WCE_NODE_INPUT:
             str_append(buf, cap, len, "<input type='text'");
-            inject_style();
+            inject_style(node, buf, cap, len);
             if (node->label) {
                 str_append(buf, cap, len, " placeholder='");
                 str_append(buf, cap, len, node->label);
@@ -314,6 +325,29 @@ static void wce_render_node_recursive(WceNode* node, char** buf, size_t* cap, si
                  str_append(buf, cap, len, "&val='+encodeURIComponent(this.value), {method:'POST'})\"");
             }
             str_append(buf, cap, len, "/>");
+            break;
+        case WCE_NODE_SLIDER:
+            str_append(buf, cap, len, "<input type='range'");
+            inject_style(node, buf, cap, len);
+            if (node->value_ref) {
+                 str_append(buf, cap, len, " wce-bind='");
+                 str_append(buf, cap, len, node->value_ref);
+                 str_append(buf, cap, len, "'");
+                 str_append(buf, cap, len, " oninput=\"fetch('/api/update?key=");
+                 str_append(buf, cap, len, node->value_ref);
+                 str_append(buf, cap, len, "&val='+encodeURIComponent(this.value), {method:'POST'})\"");
+            }
+            str_append(buf, cap, len, "/>");
+            break;
+        case WCE_NODE_PROGRESS:
+            str_append(buf, cap, len, "<progress max='100'");
+            inject_style(node, buf, cap, len);
+            if (node->value_ref) {
+                 str_append(buf, cap, len, " wce-bind='");
+                 str_append(buf, cap, len, node->value_ref);
+                 str_append(buf, cap, len, "'");
+            }
+            str_append(buf, cap, len, "></progress>");
             break;
         default: break;
     }
@@ -411,7 +445,7 @@ void _wce_node_set_prop(WceNode* node, const char* label, const char* val_ref, c
             char* end = strstr(label, "}}");
             size_t len = end - start;
             char* key = (char*)malloc(len + 1);
-            strncpy(key, start, len);
+            memcpy(key, start, len);
             key[len] = '\0';
             
             // Trim spaces
@@ -489,7 +523,7 @@ void send_response(wce_socket_t client_fd, const char* status, const char* conte
 
 	send(client_fd, header, header_len, 0);
 	if (body && body_len > 0) {
-		send(client_fd, body, body_len, 0);
+		send(client_fd, body, (int)body_len, 0);
 	}
 }
 
@@ -536,7 +570,7 @@ static char* wce_get_query_param(const char* query, const char* key) {
     size_t len = end ? (size_t)(end - start) : strlen(start);
     char* val = (char*)malloc(len + 1);
     if (!val) return NULL;
-    strncpy(val, start, len);
+    memcpy(val, start, len);
     val[len] = '\0';
     
     // Decode in place
@@ -549,9 +583,21 @@ void process_request(int client_idx) {
 	c->buffer[c->buf_len] = '\0';
 
 	char method[16], path[256];
-	if (sscanf(c->buffer, "%15s %255s", method, path) != 2) {
-		return;
-	}
+	// Parse HTTP request line manually
+	const char* buf = c->buffer;
+	char* space1 = strchr(buf, ' ');
+	if (!space1) return;
+	size_t method_len = space1 - buf;
+	if (method_len >= sizeof(method)) return;
+	memcpy(method, buf, method_len);
+	method[method_len] = '\0';
+
+	char* space2 = strchr(space1 + 1, ' ');
+	if (!space2) return;
+	size_t path_len = space2 - space1 - 1;
+	if (path_len >= sizeof(path)) return;
+	memcpy(path, space1 + 1, path_len);
+	path[path_len] = '\0';
 
 	// API: List Data
 	if (strncmp(path, "/api/list", 9) == 0 && strcmp(method, "GET") == 0) {
@@ -580,7 +626,7 @@ void process_request(int client_idx) {
 				wce_data_set(key, val);
 				
 				// Also call hook if needed (optional)
-				wce_handle_model_update(key, val);
+				wce_model_update_handler(key, val);
 				
 				send_response(c->fd, "200 OK", "text/plain", "OK", 2);
                 free(key);
@@ -597,14 +643,22 @@ void process_request(int client_idx) {
 	// API: Data Sync
 	if (strcmp(path, "/api/data") == 0 && strcmp(method, "GET") == 0) {
 		char json[4096] = "{";
+		size_t json_len = 1;
 		for (int i = 0; i < kv_count; i++) {
-			if (i > 0) strcat(json, ",");
+			if (i > 0) {
+				memcpy(json + json_len, ",", 1);
+				json_len += 1;
+			}
 			char entry[256];
 			snprintf(entry, sizeof(entry), "\"%s\":\"%s\"", kv_store[i].key, kv_store[i].value);
-			strcat(json, entry);
+			size_t entry_len = strlen(entry);
+			memcpy(json + json_len, entry, entry_len);
+			json_len += entry_len;
 		}
-		strcat(json, "}");
-		send_response(c->fd, "200 OK", "application/json", json, strlen(json));
+		memcpy(json + json_len, "}", 1);
+		json_len += 1;
+		json[json_len] = '\0';
+		send_response(c->fd, "200 OK", "application/json", json, json_len - 1);
 		return;
 	}
 
